@@ -1,5 +1,7 @@
 # openwrt-llama-seed
 
+[![qemu-aarch64](https://github.com/zishuowang696/openwrt-llama-seed/actions/workflows/ci.yml/badge.svg)](https://github.com/zishuowang696/openwrt-llama-seed/actions/workflows/ci.yml)
+
 A small, reproducible seed for running **llama.cpp on OpenWrt aarch64**.
 It builds a static musl `llama-cli`, checks it under QEMU aarch64, and gives
 you an install path for a router.
@@ -15,6 +17,16 @@ This is a **seed**, not an official OpenWrt package and not a promise that a
 - `scripts/qemu-smoke.sh` — run the binary under QEMU aarch64 user-mode.
 - `openwrt/install.sh` — install `llama-cli` and create `/root/models`.
 - `.github/workflows/ci.yml` — build + QEMU smoke; model smoke on `main`.
+
+## Download
+
+Prebuilt static binary: [v0.1.0](https://github.com/zishuowang696/openwrt-llama-seed/releases/tag/v0.1.0).
+
+```sh
+wget https://github.com/zishuowang696/openwrt-llama-seed/releases/download/v0.1.0/llama-cli
+chmod +x llama-cli
+scp llama-cli root@router:/usr/bin/
+```
 
 ## Build
 
