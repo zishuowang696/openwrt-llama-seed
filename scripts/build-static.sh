@@ -13,8 +13,9 @@ TARGETS="${LLAMA_TARGETS:-llama-cli}"
 if [ ! -x "$TOOLCHAIN/bin/aarch64-linux-musl-gcc" ]; then
   mkdir -p "$ROOT/.toolchain"
   rm -rf "$TOOLCHAIN"
+  TOOLCHAIN_URL="${AARCH64_MUSL_TOOLCHAIN_URL:-https://github.com/biancheng-net/aarch64-linux-musl-cross/releases/download/v1.0/aarch64-linux-musl-cross.tgz}"
   curl -fL --retry 3 --connect-timeout 20 \
-    https://musl.cc/aarch64-linux-musl-cross.tgz \
+    "$TOOLCHAIN_URL" \
     -o "$ROOT/.toolchain/toolchain.tgz"
   tar -xzf "$ROOT/.toolchain/toolchain.tgz" -C "$ROOT/.toolchain"
   rm -f "$ROOT/.toolchain/toolchain.tgz"
