@@ -1,0 +1,71 @@
+name: qemu-aarch64
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache musl toolchain
+        uses: actions/cache@v4
+        with:
+          path: .toolchain
+          key: aarch64-linux-musl-cross-11.2.1-v1
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build static aarch64 llama-cli
+        run: ./scripts/build-static.sh
+
+      - name: Inspect binary
+        run: |
+          file dist/llama-cli
+          readelf -h dist/llama-cli | grep -E 'Class:|Machine:|Type:'
+          if readelf -d dist/llama-cli 2>/dev/null | grep -q NEEDED; then
+            echo "unexpected dynamic dependencies" >&2
+            readelf -d dist/llama-cli
+            exit 1
+          fi
+
+      - name: Run under QEMU aarch64
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD/dist:/dist:ro" \
+            alpine:3.20 /dist/llama-cli --help >/dev/null
+
+      - name: Cache model
+        if: github.event_name != 'pull_request'
+        uses: actions/cache@v4
+        with:
+          path: .cache/models
+          key: smollm2-135m-instruct-q4km-v1
+
+      - name: Model smoke under QEMU
+        if: github.event_name != 'pull_request'
+        run: |
+          ./scripts/fetch-model.sh
+          timeout 600 docker run --rm --platform linux/arm64 \
+            -v "$PWD/dist:/dist:ro" \
+            -v "$PWD/.cache/models:/models:ro" \
+            alpine:3.20 /dist/llama-cli \
+            -m /models/SmolLM2-135M-Instruct-Q4_K_M.gguf \
+            -p "Hello" -n 1 -c 64 -t 1 -st --no-display-prompt
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-cli-aarch64-static
+          path: dist/llama-cli
